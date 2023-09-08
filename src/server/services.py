@@ -1,13 +1,21 @@
+import asyncio
+
 from schemas import Message, Operator
 from exceptions import InvalidAuth, Stop  # noqa
 from math import factorial
-import asyncio
+import logging
+
+logging.basicConfig(format='%(levelname)s %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 async def process_message(raw_message: str):
-    message = Message.parse_raw(raw_message)
+    message = Message.model_validate_json(raw_message)
+    logger.debug("Process %s", message)
 
     if not await auth(message):
+        logger.info("Invalid auth")
         raise InvalidAuth()
 
     return await process_math(message)
@@ -28,6 +36,6 @@ async def process_math(message: Message):
         Operator.fact.value: lambda x, y: factorial(int(x)),
         Operator.stop.value: lambda x, y: exec("raise Stop()"),
     }[message.operator]
-    # await asyncio.sleep(5)
+    await asyncio.sleep(1)
 
     return operator(message.left, message.right)

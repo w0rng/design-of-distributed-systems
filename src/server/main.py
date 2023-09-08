@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from services import process_message
 import exceptions
 
-logging.basicConfig(format='%(levelname)s %(message)s')
+logging.basicConfig(format='%(asctime)s\t%(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -41,6 +41,7 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         await write_and_close(writer, "Stoping server")
         return
     except ValidationError as e:
+        logger.debug("error %s", e.errors()[0]["msg"])
         await write_and_close(writer, e.errors()[0]["msg"])
         return
 
@@ -49,8 +50,7 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
 
 async def main():
-    server = await asyncio.start_server(
-        handler, '127.0.0.1', 8888)
+    server = await asyncio.start_server(handler, '0.0.0.0', 8888)
 
     addr = server.sockets[0].getsockname()
     logger.info('Serving on %s', addr)
@@ -58,6 +58,8 @@ async def main():
     async with server:
         await server.start_serving()
         await stop_event.wait()
+        running_tasks = asyncio.all_tasks() - {asyncio.current_task()}
+        await asyncio.gather(*running_tasks)
         logger.info("Server is stopping")
 
 

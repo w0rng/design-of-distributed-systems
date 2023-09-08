@@ -13,5 +13,8 @@ WORKDIR /app/
 ENV PYTHONPATH=/app/pkgs
 COPY --from=builder /__pypackages__/3.11/lib pkgs
 
-FROM app as prod
-COPY src .
+FROM app as client
+COPY src/client .
+
+FROM app as server
+COPY src/server .
