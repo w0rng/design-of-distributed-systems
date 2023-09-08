@@ -1,0 +1,19 @@
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+    {name = "w0rng", email = "study@w0rng.ru"},
+]
+dependencies = []
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "black>=23.7.0",
+    "isort>=5.12.0",
+    "ruff>=0.0.287",
+    "pytest>=7.4.2",
+]
