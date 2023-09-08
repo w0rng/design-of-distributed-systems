@@ -9,17 +9,16 @@ async def tcp_echo_client(message: Message):
         reader, writer = await asyncio.open_connection(
             '127.0.0.1', 8888)
     except ConnectionRefusedError:
-        print("Server is not running")
+        await asyncio.sleep(1)
         return
 
-    print(f'Send: {message}')
+    print(f'{message} = ', end='')
     writer.write(message.json().encode())
     await writer.drain()
 
     data = await reader.read(100)
-    print(f'Received: {data.decode()!r}')
+    print(f'{data.decode()!r}')
 
-    print('Close the connection')
     writer.close()
     await writer.wait_closed()
 
@@ -29,7 +28,7 @@ while True:
     message = Message(
         operator=operator,
         left=randint(0, 10),
-        right=randint(1, 10),
+        right=randint(0, 100),
         login=randint(0, 350),
     )
     asyncio.run(tcp_echo_client(message))

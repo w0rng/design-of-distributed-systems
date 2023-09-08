@@ -1,5 +1,8 @@
 import asyncio
 import logging
+
+from pydantic import ValidationError
+
 from services import process_message
 import exceptions
 
@@ -29,20 +32,16 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
     logger.debug("Received %s from %s", message, addr)
     try:
-        result = process_message(message)
+        result = await process_message(message)
     except exceptions.InvalidAuth:
         await write_and_close(writer, "Invalid auth")
-        return
-    except exceptions.InvalidMessage:
-        await write_and_close(writer, "Invalid message")
         return
     except exceptions.Stop:
         stop_event.set()
         await write_and_close(writer, "Stoping server")
         return
-    except Exception as e:
-        logger.exception("Unexpected error")
-        await write_and_close(writer, "Unexpected error")
+    except ValidationError as e:
+        await write_and_close(writer, e.errors()[0]["msg"])
         return
 
     logger.debug("Send: %s", result)

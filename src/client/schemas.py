@@ -14,8 +14,8 @@ class Operator(str, Enum):
 
 class Message(BaseModel):
     operator: Operator
-    left: Decimal
-    right: Decimal
+    left: Decimal | None
+    right: Decimal | None
     login: str
 
     def __str__(self):

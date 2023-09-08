@@ -1,30 +1,25 @@
-from pydantic import ValidationError
-
 from schemas import Message, Operator
-from exceptions import InvalidAuth, InvalidMessage, Stop
+from exceptions import InvalidAuth, Stop  # noqa
 from math import factorial
+import asyncio
 
 
-def process_message(raw_message: str):
-    try:
-        message = Message.parse_raw(raw_message)
-    except ValidationError as e:
-        print(e)
-        raise InvalidMessage()
+async def process_message(raw_message: str):
+    message = Message.parse_raw(raw_message)
 
-    if not auth(message):
+    if not await auth(message):
         raise InvalidAuth()
 
-    return process_math(message)
+    return await process_math(message)
 
 
-def auth(message: Message):
+async def auth(message: Message):
     if message.login in list(map(str, range(0, 300))):
         return True
     return False
 
 
-def process_math(message: Message):
+async def process_math(message: Message):
     operator = {
         Operator.add.value: lambda x, y: x + y,
         Operator.sub.value: lambda x, y: x - y,
@@ -33,5 +28,6 @@ def process_math(message: Message):
         Operator.fact.value: lambda x, y: factorial(int(x)),
         Operator.stop.value: lambda x, y: exec("raise Stop()"),
     }[message.operator]
+    # await asyncio.sleep(5)
 
     return operator(message.left, message.right)
