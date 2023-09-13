@@ -16,5 +16,3 @@ services:
     deploy:
       replicas: 3
     command: [ "python", "main.py" ]
-    depends_on:
-      - server
