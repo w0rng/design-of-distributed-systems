@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import socket
 
 from pydantic import ValidationError
 
@@ -38,6 +39,7 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         return
     except exceptions.Stop:
         stop_event.set()
+        logger.info("Set stop_event")
         await write_and_close(writer, "Stoping server")
         return
     except ValidationError as e:
@@ -49,6 +51,22 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     await write_and_close(writer, str(result))
 
 
+async def broadcast():
+    interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
+    all_ips = {ip[-1][0] for ip in interfaces}
+    logger.info("All ips %s", all_ips)
+
+    while not stop_event.is_set():
+        for ip in all_ips:
+            logger.info("Send broadcast to %s", ip)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            sock.bind((ip, 0))
+            sock.sendto(b'i`m server', ("255.255.255.255", 5005))
+            sock.close()
+
+        await asyncio.sleep(2)
+
 async def main():
     server = await asyncio.start_server(handler, '0.0.0.0', 8888)
 
@@ -57,6 +75,7 @@ async def main():
 
     async with server:
         await server.start_serving()
+        asyncio.create_task(broadcast())
         await stop_event.wait()
         running_tasks = asyncio.all_tasks() - {asyncio.current_task()}
         await asyncio.gather(*running_tasks)

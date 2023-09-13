@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
       target: client
     deploy:
-      replicas: 10
+      replicas: 3
     command: [ "python", "main.py" ]
     depends_on:
       - server

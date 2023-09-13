@@ -1,4 +1,5 @@
 import asyncio
+import socket
 from random import choices, randint
 from time import sleep
 from schemas import Message, Operator
@@ -10,10 +11,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-async def tcp_echo_client(message: Message):
+async def tcp_echo_client(message: Message, address: str):
     try:
         reader, writer = await asyncio.open_connection(
-            'server', 8888)
+            address, 8888)
     except ConnectionRefusedError:
         await asyncio.sleep(1)
         return
@@ -31,6 +32,16 @@ async def tcp_echo_client(message: Message):
     await writer.wait_closed()
 
 
+def receive_broadcast() -> str:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.bind(("0.0.0.0", 5005))
+    while True:
+        _, addr = sock.recvfrom(1024)
+        return addr[0]
+
+
+server_address = receive_broadcast()
 while True:
     operator = choices(list(Operator), weights=[100, 100, 100, 100, 100, 20])[0]
     message = Message(
@@ -39,5 +50,5 @@ while True:
         right=randint(0, 100),
         login=str(randint(0, 350)),
     )
-    asyncio.run(tcp_echo_client(message))
+    asyncio.run(tcp_echo_client(message, server_address))
     sleep(0.1)
