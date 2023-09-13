@@ -36,9 +36,9 @@ def receive_broadcast() -> str:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.bind(("0.0.0.0", 5005))
-    while True:
-        _, addr = sock.recvfrom(1024)
-        return addr[0]
+    logger.info("wait broadcast")
+    _, addr = sock.recvfrom(1024)
+    return addr[0]
 
 
 server_address = receive_broadcast()
