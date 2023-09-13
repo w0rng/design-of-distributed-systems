@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-async def tcp_echo_client(message: Message, address: str):
+async def send_message_to(message: Message, address: str):
     try:
         reader, writer = await asyncio.open_connection(
             address, 8888)
@@ -50,5 +50,5 @@ while True:
         right=randint(0, 100),
         login=str(randint(0, 350)),
     )
-    asyncio.run(tcp_echo_client(message, server_address))
+    asyncio.run(send_message_to(message, server_address))
     sleep(0.1)
