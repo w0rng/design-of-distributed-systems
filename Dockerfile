@@ -1,4 +1,4 @@
-FROM python:3.11-alpine as builder
+FROM python:3.12-alpine as builder
 
 RUN pip install --upgrade pip && \
     pip install pdm --no-cache-dir
@@ -7,14 +7,12 @@ COPY pdm.lock pyproject.toml ./
 RUN mkdir __pypackages__ && pdm sync --prod --no-editable
 
 
-FROM python:3.11-alpine as app
+FROM python:3.12-alpine
 
 WORKDIR /app/
-ENV PYTHONPATH=/app/pkgs
-COPY --from=builder /__pypackages__/3.11/lib pkgs
+ENV PYTHONPATH=/pkgs
+COPY --from=builder /__pypackages__/3.12/lib /pkgs
+COPY --from=builder /__pypackages__/3.12/bin/* /bin/
 
-FROM app as client
-COPY src/client .
-
-FROM app as server
-COPY src/server .
+COPY src/bot .
+CMD ["python", "main.py"]
