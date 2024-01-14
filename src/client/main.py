@@ -43,7 +43,7 @@ def receive_broadcast() -> str:
 
 server_address = receive_broadcast()
 while True:
-    operator = choices(list(Operator), weights=[100, 100, 100, 100, 100, 20])[0]
+    operator = choices(list(Operator), weights=[100, 100, 100, 100, 100, 50])[0]
     message = Message(
         operator=operator,
         left=randint(0, 10),

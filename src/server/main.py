@@ -4,10 +4,10 @@ import socket
 
 from pydantic import ValidationError
 
-from services import process_message
 import exceptions
+from services import process_message
 
-logging.basicConfig(format='%(asctime)s\t%(message)s')
+logging.basicConfig(format="%(asctime)s\t%(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -22,7 +22,7 @@ async def write_and_close(writer: asyncio.StreamWriter, message: str):
 
 
 async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-    addr = writer.get_extra_info('peername')
+    addr = writer.get_extra_info("peername")
     logger.info("Connection from %s", addr)
     if stop_event.is_set():
         await write_and_close(writer, "Server is stopping")
@@ -52,26 +52,31 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
 
 async def broadcast():
-    interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
+    interfaces = socket.getaddrinfo(
+        host=socket.gethostname(), port=None, family=socket.AF_INET
+    )
     all_ips = {ip[-1][0] for ip in interfaces}
     logger.info("All ips %s", all_ips)
 
     while not stop_event.is_set():
         for ip in all_ips:
             logger.info("Send broadcast to %s", ip)
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
+            sock = socket.socket(
+                socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
+            )  # UDP
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             sock.bind((ip, 0))
-            sock.sendto(b'i`m server', ("255.255.255.255", 5005))
+            sock.sendto(b"i`m server", ("255.255.255.255", 5005))
             sock.close()
 
         await asyncio.sleep(2)
 
+
 async def main():
-    server = await asyncio.start_server(handler, '0.0.0.0', 8888)
+    server = await asyncio.start_server(handler, "0.0.0.0", 8888)
 
     addr = server.sockets[0].getsockname()
-    logger.info('Serving on %s', addr)
+    logger.info("Serving on %s", addr)
 
     async with server:
         await server.start_serving()
