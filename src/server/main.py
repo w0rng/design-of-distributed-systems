@@ -1,15 +1,11 @@
 import asyncio
-import logging
 import socket
 
+from loguru import logger
 from pydantic import ValidationError
 
 import exceptions
 from services import process_message
-
-logging.basicConfig(format="%(asctime)s\t%(message)s")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 stop_event = asyncio.Event()
 
@@ -80,7 +76,7 @@ async def main():
 
     async with server:
         await server.start_serving()
-        asyncio.create_task(broadcast())
+        await asyncio.create_task(broadcast())
         await stop_event.wait()
         running_tasks = asyncio.all_tasks() - {asyncio.current_task()}
         await asyncio.gather(*running_tasks)

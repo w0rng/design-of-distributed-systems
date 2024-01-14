@@ -1,14 +1,12 @@
 import asyncio
 import socket
 from random import choices, randint
-from time import sleep
-from schemas import Message, Operator
-import logging
 from socket import gaierror
+from time import sleep
 
-logging.basicConfig(format='%(asctime)s\t%(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from loguru import logger
+
+from schemas import Message, Operator
 
 
 async def send_message_to(message: Message, address: str):
