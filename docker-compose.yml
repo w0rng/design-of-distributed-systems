@@ -2,6 +2,13 @@ version: "3.8"
 
 services:
   bot:
-    build: .
+    build:
+      target: bot
     deploy:
-      replicas: 3
+      replicas: 30
+
+  monitoring:
+    build:
+      target: monitoring
+    ports:
+      - "80:80"
