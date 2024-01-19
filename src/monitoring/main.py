@@ -4,6 +4,7 @@ from json import loads
 from queue import Queue
 from threading import Thread, Lock
 from time import sleep
+from collections import defaultdict
 
 from flask import Flask, render_template
 from loguru import logger
@@ -14,33 +15,64 @@ RUN = True
 
 class GraphDataMaker:
     def __init__(self):
-        self.nodes = []
-        self.links = []
-        self._knowclients = set()
+        self.db = defaultdict(list)
+        self.client_statuses = dict()
+        self.client_time = dict()
         self._lock = Lock()
-        self.i = 1
+
+    def delete(self):
+        with self._lock:
+            self.db = defaultdict(list)
+            self.client_statuses = dict()
+            self.client_time = dict()
 
     def add(self, hostname, db):
         with self._lock:
-            if hostname in self._knowclients:
-                return
-
-            self._knowclients.add(hostname)
-            self.nodes.append({
-                "id": hostname,
-                "group": self.i
-            })
-            self.i += 1
             for client in db:
-                self.links.append({
-                    "source": hostname,
-                    "target": client["name"],
-                    "value": 1
-                })
+                self.db[hostname].append(client["name"])
+                if client['name'] in self.client_time:
+                    if client['time'] > self.client_time[client['name']]:
+                        self.client_time[client['name']] = client['time']
+                        self.client_statuses[client['name']] = client['active']
+                else:
+                    self.client_time[client['name']] = client['time']
+                    self.client_statuses[client['name']] = client['active']
 
     def dump(self) -> dict:
         with self._lock:
-            return {"nodes": self.nodes, "links": self.links}
+            return {"nodes": self._nodes(), "links": self._links()}
+
+    def _get_client_status(self, client: str) -> bool:
+        return self.client_statuses.get(client, False)
+
+    def _nodes(self):
+        result = []
+        for i, client in enumerate(self._active_clients()):
+            result.append({
+                "id": client,
+                "group": i
+            })
+        return result
+
+
+    def _active_clients(self):
+        return [client for client in self.db if self._get_client_status(client)]
+
+    def _links(self):
+        result = []
+        active_clients = self._active_clients()
+        for client in active_clients:
+            for target in self.db[client]:
+                if target not in active_clients:
+                    continue
+                if client == target:
+                    continue
+                result.append({
+                    "source": client,
+                    "target": target,
+                    "value": 1,
+                })
+        return result
 
 
 graph_data_maker = GraphDataMaker()
@@ -63,8 +95,9 @@ def send_brodcast(ip, queue):
     wait.start()
     while RUN:
         sock.sendto(b"metrics", (broadcast_ip, 5005))
-        logger.info(f"wait metrics {ip}")
-        sleep(10)
+        logger.info(f"wait metrics {broadcast_ip}")
+        sleep(3)
+        graph_data_maker.delete()
     wait.join()
 
 
@@ -100,7 +133,6 @@ def main():
         db, _ = sock.recvfrom(1024 * 10)
         db = loads(db)
         graph_data_maker.add(hostname, db)
-        logger.info(graph_data_maker.links)
 
 
 @app.route("/")

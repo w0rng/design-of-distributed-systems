@@ -15,10 +15,10 @@ async def receive_broadcast(stop_event: asyncio.Event, connections: asyncio.Queu
     while not stop_event.is_set():
         logger.info("wait broadcast")
         data, addr = await loop.sock_recvfrom(sock, 1024)
+        logger.info(f"receive broadcast from {addr[0]}")
         if data == b"metrics":
             sock.sendto(socket.gethostname().encode("utf-8"), addr)
             continue
 
-        logger.info(f"receive broadcast from {addr[0]}")
 
         await connections.put({"name": data.decode('utf-8'), "ip": addr[0]})

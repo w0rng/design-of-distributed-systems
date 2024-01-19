@@ -5,10 +5,37 @@ services:
     build:
       target: bot
     deploy:
-      replicas: 30
+      replicas: 10
+    networks:
+      - bot
+
+  bot_2:
+    build:
+      target: bot
+    deploy:
+      replicas: 10
+    networks:
+      - bot_2
+
+  bot_3:
+    build:
+      target: bot
+    deploy:
+      replicas: 1
+    networks:
+      - bot_2
+      - bot
 
   monitoring:
     build:
       target: monitoring
     ports:
       - "80:80"
+    networks:
+      - bot
+      - bot_2
+      - default
+
+networks:
+  bot:
+  bot_2:
